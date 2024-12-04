@@ -1,0 +1,100 @@
+# Human Tasks:
+# 1. Ensure S3 bucket is created and properly configured for trace storage
+# 2. Configure AWS credentials for S3 access
+# 3. Verify network connectivity between Tempo and other monitoring components
+# 4. Review and adjust retention periods based on compliance requirements
+
+# Requirement: Distributed Tracing and Observability (Technical Specification/7.4 Cross-Cutting Concerns/7.4.1 Monitoring and Observability)
+# Provides a centralized system for collecting, storing, and querying distributed traces to enhance observability and debugging.
+
+server:
+  http_listen_port: 3200
+  grpc_listen_port: 9095
+  log_level: info
+
+distributor:
+  receivers:
+    jaeger:
+      protocols:
+        thrift_http:
+          endpoint: "0.0.0.0:14268"
+        grpc:
+          endpoint: "0.0.0.0:14250"
+    otlp:
+      protocols:
+        grpc:
+          endpoint: "0.0.0.0:4317"
+        http:
+          endpoint: "0.0.0.0:4318"
+
+ingester:
+  max_block_duration: 5m
+  trace_idle_period: 10s
+  flush_check_period: 1m
+  complete_block_timeout: 15m
+
+compactor:
+  compaction:
+    block_retention: 30d  # Matches global retention_period
+    compacted_block_retention: 1d
+  ring:
+    kvstore:
+      store: memberlist
+
+storage:
+  trace:
+    backend: s3  # Matches global storage_backend
+    s3:
+      bucket: tempo-traces  # S3 bucket for trace storage
+      endpoint: s3.amazonaws.com
+      region: us-east-1
+      access_key: ${AWS_ACCESS_KEY_ID}
+      secret_key: ${AWS_SECRET_ACCESS_KEY}
+      insecure: false
+      
+    blocklist_poll: 5m
+    cache: memcached
+    memcached:
+      consistent_hash: true
+      host: memcached:11211
+      service: memcached-client
+      timeout: 200ms
+
+overrides:
+  max_search_duration: 10s  # Matches global query_timeout
+  max_bytes_per_trace: 50mb
+  max_search_bytes_per_trace: 5mb
+
+search_enabled: true
+
+metrics_generator:
+  registry:
+    external_labels:
+      source: tempo
+      cluster: main
+  storage:
+    path: /tmp/tempo/generator/wal
+    remote_write:
+      - url: http://prometheus:9090/api/v1/write
+        send_exemplars: true
+
+querier:
+  frontend_worker:
+    frontend_address: "query-frontend:9095"
+  max_concurrent_queries: 20
+  timeout: 10s  # Matches global query_timeout
+
+query_frontend:
+  max_outstanding_per_tenant: 2000
+  search:
+    max_duration: 10s  # Matches global query_timeout
+  trace_by_id:
+    query_timeout: 10s  # Matches global query_timeout
+
+memberlist:
+  abort_if_cluster_join_fails: false
+  join_members:
+    - tempo-memberlist
+
+usage_report:
+  reporting_enabled: false
