@@ -1,0 +1,170 @@
+# Human Tasks:
+# 1. Ensure Elasticsearch cluster is properly configured and running
+# 2. Configure proper authentication for Elasticsearch access
+# 3. Set up network connectivity between Jaeger and other monitoring components
+# 4. Review and adjust retention periods based on compliance requirements
+# 5. Configure proper resource limits for Jaeger components
+
+# Requirement: Distributed Tracing and Observability (Technical Specification/7.4 Cross-Cutting Concerns/7.4.1 Monitoring and Observability)
+# Provides a centralized system for collecting, storing, and querying distributed traces to enhance observability and debugging.
+
+version: 1
+
+# Global configurations
+enabled: true
+tenant: dog-walker
+namespace: monitoring
+
+# Collector configuration
+collector:
+  service:
+    name: jaeger-collector
+  ports:
+    grpc: 14250
+    thrift-http: 14268
+    thrift-compact: 6831
+    thrift-binary: 6832
+  resources:
+    limits:
+      cpu: 1
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  replicas: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+# Query configuration
+query:
+  service:
+    name: jaeger-query
+  ports:
+    query: 16686
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  replicas: 2
+  options:
+    query:
+      timeout: 15s # Matches global query_timeout
+    log-level: info
+
+# Storage configuration
+storage:
+  type: elasticsearch # Matches global storage_backend
+  elasticsearch:
+    host: elasticsearch-master
+    port: 9200
+    scheme: http
+    username: ${ES_USERNAME}
+    password: ${ES_PASSWORD}
+    indexPrefix: jaeger
+    maxDocCount: 10000
+    maxSpanCount: 10000
+    sniffer: false
+    timeout: 5s
+    retention: 7d # Matches global retention_period
+    rollover: 24h
+    indexDateSeparator: "-"
+    tags-as-fields:
+      all: true
+      dot-replacement: "@"
+    tls:
+      enabled: false
+
+# Agent configuration
+agent:
+  enabled: true
+  strategy: daemonset
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  options:
+    log-level: info
+
+# Ingester configuration
+ingester:
+  enabled: true
+  replicas: 2
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  options:
+    log-level: info
+
+# Integration with other monitoring components
+monitoring:
+  # Prometheus integration
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      interval: 30s
+    scrapeConfigs: ${scrape_configs} # From prometheus.yml
+
+  # Loki integration
+  loki:
+    enabled: true
+    storage: ${storage_config} # From loki.yaml
+
+  # Tempo integration
+  tempo:
+    enabled: true
+    storage: ${storage_config} # From tempo.yaml
+
+  # Grafana integration
+  grafana:
+    enabled: true
+    dashboard:
+      enabled: true
+      datasource: ${datasource} # From kubernetes.json
+
+# Alerting configuration
+alerting:
+  enabled: true
+  rules:
+    - alert: JaegerCollectorDown
+      expr: up{job="jaeger-collector"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Jaeger Collector is down"
+        description: "Jaeger Collector has been down for more than 5 minutes"
+
+    - alert: JaegerQueryDown
+      expr: up{job="jaeger-query"} == 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Jaeger Query is down"
+        description: "Jaeger Query has been down for more than 5 minutes"
+
+    - alert: HighTraceLatency
+      expr: histogram_quantile(0.95, rate(jaeger_query_latency_bucket[5m])) > 2
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High trace query latency"
+        description: "95th percentile of trace query latency is above 2 seconds"
+
+# Routes configuration from alertmanager
+routes: ${routes} # From alertmanager.yml
