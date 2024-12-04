@@ -1,0 +1,61 @@
+# Kubernetes Ingress configuration for Dog Walker platform
+# Addresses requirement 7.4.2 Deployment Architecture: External Traffic Routing
+# Ensures external HTTP/HTTPS traffic is routed to the appropriate backend services
+
+# Human Tasks:
+# 1. Configure DNS records to point dogwalker.example.com to the cluster's ingress controller IP
+# 2. Ensure TLS certificates are properly generated and stored in the specified Secret
+# 3. Configure monitoring and alerts for ingress controller metrics
+# 4. Review and adjust rate limiting and timeout settings based on load testing
+# 5. Set up proper network policies to restrict ingress traffic
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: dogwalker-ingress
+  namespace: default
+  annotations:
+    # Use NGINX ingress controller v1.7.0
+    kubernetes.io/ingress.class: "nginx"
+    # Enable SSL redirect
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # Configure SSL passthrough
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    # Configure backend protocol
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    # Configure proxy timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    # Enable CORS
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    # Configure rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+    nginx.ingress.kubernetes.io/limit-rpm: "100"
+    # Enable proxy buffering
+    nginx.ingress.kubernetes.io/proxy-buffering: "on"
+    # Configure client max body size
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+
+spec:
+  # TLS configuration using the dogwalker-tls secret
+  tls:
+  - hosts:
+    - dogwalker.example.com
+    secretName: dogwalker-tls
+
+  # Routing rules
+  rules:
+  - host: dogwalker.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-service
+            port:
+              number: 80
