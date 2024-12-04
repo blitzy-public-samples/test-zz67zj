@@ -1,0 +1,25 @@
+# Fastlane Appfile
+# Version: fastlane 2.217.0 or later
+
+# Requirement Addressed: iOS Deployment Automation
+# Technical Specification/9.5 Development & Deployment
+# This configuration file enables automated deployment processes for iOS,
+# providing essential identifiers and credentials for App Store operations
+
+# The bundle identifier of your iOS application
+app_identifier("com.example.dogwalker")
+
+# Your Apple ID (usually the email used for the Apple Developer account)
+apple_id("developer@example.com")
+
+# Your Apple Developer Portal Team ID
+team_id("ABCDE12345")
+
+# You can uncomment the line below if you need to specify a different team ID for iTunes Connect
+# itc_team_id("ABCDE12345")
+
+# Human Tasks Required:
+# 1. Verify the Apple ID (developer@example.com) has appropriate access to Apple Developer Portal
+# 2. Confirm the Team ID (ABCDE12345) matches your Apple Developer account
+# 3. Ensure the bundle identifier (com.example.dogwalker) matches your Xcode project settings
+# 4. If using App Store Connect API, generate and configure the API Key in your Apple Developer account
