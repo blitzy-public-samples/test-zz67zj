@@ -1,0 +1,171 @@
+# Human Tasks:
+# 1. Review and adjust alert thresholds based on production metrics and SLAs
+# 2. Verify alert routing configurations in Alertmanager match team structures
+# 3. Ensure runbook URLs are accessible and documentation is up to date
+# 4. Test alert notifications through all configured channels
+# 5. Set up proper on-call rotations in PagerDuty/VictorOps for critical alerts
+
+# Requirement: Monitoring and Observability (Technical Specification/7.4 Cross-Cutting Concerns/7.4.1 Monitoring and Observability)
+# Provides alerting rules to monitor system health and trigger notifications for critical issues
+
+groups:
+  # Service Health Alerts
+  - name: service_health
+    rules:
+      - alert: ServiceDown
+        expr: up{job="api-services"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "Service {{ $labels.instance }} has been down for more than 1 minute"
+          runbook_url: "https://runbooks.dogwalker.local/service-down"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{job="api-services",status_code=~"5.."}[5m]) / rate(http_requests_total{job="api-services"}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: application
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Error rate is above 5% for the last 5 minutes on {{ $labels.service }}"
+          runbook_url: "https://runbooks.dogwalker.local/high-error-rate"
+
+  # Resource Utilization Alerts
+  - name: resource_utilization
+    rules:
+      - alert: HighCPUUsage
+        expr: node:cpu_utilization:avg_5m > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 85% for more than 10 minutes"
+          runbook_url: "https://runbooks.dogwalker.local/high-cpu-usage"
+
+      - alert: HighMemoryUsage
+        expr: node:memory_utilization:avg_5m > 90
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 90% for more than 10 minutes"
+          runbook_url: "https://runbooks.dogwalker.local/high-memory-usage"
+
+      - alert: DiskSpaceRunningOut
+        expr: node:disk_utilization:avg_5m > 85
+        for: 15m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk usage is above 85% for more than 15 minutes"
+          runbook_url: "https://runbooks.dogwalker.local/low-disk-space"
+
+  # Database Alerts
+  - name: database
+    rules:
+      - alert: HighDatabaseConnections
+        expr: db:postgresql_active_connections:sum > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High number of database connections"
+          description: "Database {{ $labels.datname }} has more than 100 active connections"
+          runbook_url: "https://runbooks.dogwalker.local/high-db-connections"
+
+      - alert: SlowDatabaseQueries
+        expr: db:postgresql_query_duration:p95_5m > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: application
+        annotations:
+          summary: "Slow database queries detected"
+          description: "95th percentile query duration is above 1 second for {{ $labels.datname }}"
+          runbook_url: "https://runbooks.dogwalker.local/slow-queries"
+
+  # Cache Alerts
+  - name: cache
+    rules:
+      - alert: HighCacheMemoryUsage
+        expr: cache:redis_memory_usage:ratio > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High Redis memory usage"
+          description: "Redis memory usage is above 85%"
+          runbook_url: "https://runbooks.dogwalker.local/high-cache-memory"
+
+      - alert: LowCacheHitRate
+        expr: cache:redis_hit_rate:5m < 0.5
+        for: 15m
+        labels:
+          severity: warning
+          team: application
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is below 50% for the last 15 minutes"
+          runbook_url: "https://runbooks.dogwalker.local/low-cache-hits"
+
+  # Business Metrics Alerts
+  - name: business
+    rules:
+      - alert: LowBookingSuccessRate
+        expr: business:booking_success_rate:5m < 0.95
+        for: 15m
+        labels:
+          severity: critical
+          team: application
+        annotations:
+          summary: "Low booking success rate"
+          description: "Booking success rate is below 95% for the last 15 minutes"
+          runbook_url: "https://runbooks.dogwalker.local/low-booking-success"
+
+      - alert: LowPaymentSuccessRate
+        expr: business:payment_success_rate:5m < 0.98
+        for: 10m
+        labels:
+          severity: critical
+          team: application
+        annotations:
+          summary: "Low payment success rate"
+          description: "Payment success rate is below 98% for the last 10 minutes"
+          runbook_url: "https://runbooks.dogwalker.local/low-payment-success"
+
+  # SLO/SLA Alerts
+  - name: slo_violations
+    rules:
+      - alert: AvailabilitySLOViolation
+        expr: slo:availability:ratio_5m < 0.995
+        for: 15m
+        labels:
+          severity: critical
+          team: application
+        annotations:
+          summary: "Availability SLO violation"
+          description: "Service availability is below 99.5% for the last 15 minutes"
+          runbook_url: "https://runbooks.dogwalker.local/slo-violation"
+
+      - alert: LatencySLOViolation
+        expr: slo:latency_compliance:ratio_5m < 0.99
+        for: 15m
+        labels:
+          severity: critical
+          team: application
+        annotations:
+          summary: "Latency SLO violation"
+          description: "Less than 99% of requests are completing within the target latency threshold"
+          runbook_url: "https://runbooks.dogwalker.local/latency-slo-violation"
