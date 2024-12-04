@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="21754" systemVersion="22E261" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <!-- User Entity - Requirement: User Management (1.3 Scope/Core Features/User Management) -->
+    <entity name="User" representedClassName="User" syncable="YES">
+        <attribute name="email" attributeType="String"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="name" attributeType="String"/>
+        <attribute name="phone" attributeType="String"/>
+        <attribute name="role" attributeType="String"/>
+        <relationship name="bookingsAsOwner" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Booking" inverseName="owner" inverseEntity="Booking"/>
+        <relationship name="bookingsAsWalker" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Booking" inverseName="walker" inverseEntity="Booking"/>
+        <relationship name="dogs" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Dog" inverseName="owner" inverseEntity="Dog"/>
+        <relationship name="payments" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Payment" inverseName="payer" inverseEntity="Payment"/>
+        <relationship name="walks" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Walk" inverseName="walker" inverseEntity="Walk"/>
+    </entity>
+
+    <!-- Dog Entity - Requirement: Dog Profile Management (1.3 Scope/Core Features/User Management) -->
+    <entity name="Dog" representedClassName="Dog" syncable="YES">
+        <attribute name="age" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="breed" attributeType="String"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="name" attributeType="String"/>
+        <relationship name="bookings" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Booking" inverseName="dogs" inverseEntity="Booking"/>
+        <relationship name="owner" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="dogs" inverseEntity="User"/>
+        <relationship name="walks" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Walk" inverseName="dogs" inverseEntity="Walk"/>
+    </entity>
+
+    <!-- Booking Entity - Requirement: Booking System (1.3 Scope/Core Features/Booking System) -->
+    <entity name="Booking" representedClassName="Booking" syncable="YES">
+        <attribute name="id" attributeType="String"/>
+        <attribute name="scheduledAt" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="status" attributeType="String"/>
+        <relationship name="dogs" toMany="YES" deletionRule="Nullify" destinationEntity="Dog" inverseName="bookings" inverseEntity="Dog"/>
+        <relationship name="owner" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="bookingsAsOwner" inverseEntity="User"/>
+        <relationship name="payment" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Payment" inverseName="booking" inverseEntity="Payment"/>
+        <relationship name="walker" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="bookingsAsWalker" inverseEntity="User"/>
+        <relationship name="walk" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Walk" inverseName="booking" inverseEntity="Walk"/>
+    </entity>
+
+    <!-- Walk Entity - Requirement: Service Execution (1.3 Scope/Core Features/Service Execution) -->
+    <entity name="Walk" representedClassName="Walk" syncable="YES">
+        <attribute name="endTime" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="startTime" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="status" attributeType="String"/>
+        <relationship name="booking" maxCount="1" deletionRule="Nullify" destinationEntity="Booking" inverseName="walk" inverseEntity="Booking"/>
+        <relationship name="dogs" toMany="YES" deletionRule="Nullify" destinationEntity="Dog" inverseName="walks" inverseEntity="Dog"/>
+        <relationship name="locations" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Location" inverseName="walk" inverseEntity="Location"/>
+        <relationship name="payment" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Payment" inverseName="walk" inverseEntity="Payment"/>
+        <relationship name="walker" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="walks" inverseEntity="User"/>
+    </entity>
+
+    <!-- Location Entity - Requirement: Service Execution (1.3 Scope/Core Features/Service Execution) -->
+    <entity name="Location" representedClassName="Location" syncable="YES">
+        <attribute name="latitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="longitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="walk" maxCount="1" deletionRule="Nullify" destinationEntity="Walk" inverseName="locations" inverseEntity="Walk"/>
+    </entity>
+
+    <!-- Payment Entity - Requirement: Payments (1.3 Scope/Core Features/Payments) -->
+    <entity name="Payment" representedClassName="Payment" syncable="YES">
+        <attribute name="amount" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="currency" attributeType="String"/>
+        <attribute name="id" attributeType="String"/>
+        <attribute name="status" attributeType="String"/>
+        <attribute name="timestamp" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="booking" maxCount="1" deletionRule="Nullify" destinationEntity="Booking" inverseName="payment" inverseEntity="Booking"/>
+        <relationship name="payer" maxCount="1" deletionRule="Nullify" destinationEntity="User" inverseName="payments" inverseEntity="User"/>
+        <relationship name="walk" maxCount="1" deletionRule="Nullify" destinationEntity="Walk" inverseName="payment" inverseEntity="Walk"/>
+    </entity>
+</model>
