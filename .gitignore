@@ -1,0 +1,57 @@
+# This .gitignore file addresses the following requirements:
+# - Version Control Management (Technical Specification/7.4.3 Security Architecture)
+#   Ensures sensitive files and unnecessary artifacts are not included in version control
+# - Multi-Platform Support (Technical Specification/7.1 High-Level Architecture)
+#   Includes patterns for Android, iOS, backend, and infrastructure components
+
+# General
+*.log
+*.tmp
+*.swp
+*.bak
+*.orig
+*.rej
+Thumbs.db
+.DS_Store
+.env
+.env.*
+node_modules/
+dist/
+build/
+coverage/
+.idea/
+.vscode/
+.history/
+
+# Android specific
+src/android/.gradle/
+src/android/build/
+src/android/app/build/
+src/android/local.properties
+src/android/.idea/
+src/android/.cxx/
+*.iml
+
+# iOS specific
+src/ios/Pods/
+src/ios/DerivedData/
+src/ios/build/
+*.xcworkspace
+*.xcuserstate
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# Backend specific
+src/backend/node_modules/
+src/backend/dist/
+src/backend/.env
+src/backend/.env.*
+src/backend/logs/
+src/backend/tmp/
+
+# Infrastructure specific
+infrastructure/terraform/.terraform/
+infrastructure/terraform/terraform.tfstate
+infrastructure/terraform/terraform.tfstate.*
+infrastructure/terraform/.terraform.lock.hcl
+infrastructure/scripts/*.log
