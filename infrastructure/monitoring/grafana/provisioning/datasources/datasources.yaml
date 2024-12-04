@@ -1,0 +1,71 @@
+# Grafana Data Sources Configuration
+# Version: Grafana v9.0.0
+# Purpose: Defines data source connections for metrics, logs, and traces visualization
+
+# Requirement addressed: Technical Specification/7.4 Cross-Cutting Concerns/7.4.1 Monitoring and Observability
+# Provides the configuration for Grafana to connect with Prometheus, Loki, and Tempo for visualizing metrics, logs, and traces.
+
+apiVersion: 1
+
+deleteDatasources:
+  - name: Prometheus
+  - name: Loki
+  - name: Tempo
+
+datasources:
+  # Prometheus data source for metrics
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus-server:9090
+    version: 1
+    isDefault: true
+    jsonData:
+      timeInterval: 30s
+      queryTimeout: 60s
+      httpMethod: POST
+      manageAlerts: true
+    secureJsonData: {}
+    editable: true
+
+  # Loki data source for logs
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    version: 1
+    jsonData:
+      maxLines: 1000
+      derivedFields:
+        - name: traceID
+          matcherRegex: "traceID=(\\w+)"
+          url: "$${__value.raw}"
+          datasourceUid: tempo
+    secureJsonData: {}
+    editable: true
+
+  # Tempo data source for distributed tracing
+  - name: Tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    version: 1
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: prometheus
+      search:
+        hide: false
+      nodeGraph:
+        enabled: true
+      lokiSearch:
+        datasourceUid: loki
+      tracesToLogs:
+        datasourceUid: loki
+        spanStartTimeShift: "1h"
+        spanEndTimeShift: "-1h"
+        filterByTraceID: true
+        filterBySpanID: false
+        tags: ["job", "instance", "pod", "namespace"]
+    secureJsonData: {}
+    editable: true
