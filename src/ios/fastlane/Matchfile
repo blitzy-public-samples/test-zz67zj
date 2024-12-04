@@ -1,0 +1,86 @@
+# Fastlane Matchfile
+# Version: fastlane 2.217.0 or later
+
+# Requirement Addressed: iOS Deployment Automation
+# Technical Specification/9.5 Development & Deployment
+# This configuration manages code signing certificates and provisioning profiles synchronization
+
+# Human Tasks Required:
+# 1. Set up a private Git repository for storing certificates and profiles
+# 2. Configure access credentials for the Git repository
+# 3. Ensure Apple Developer Portal access is properly configured
+# 4. Set up appropriate SSH keys or credentials for Git access
+
+# Use the app identifier from Appfile
+app_identifier([
+  "com.example.dogwalker"
+])
+
+# Your Apple Developer Portal Team ID (from Appfile)
+team_id("ABCDE12345")
+
+# The type of certificate to use (development, appstore, adhoc, enterprise)
+type("development")
+
+# Git URL where match should store the certificates
+git_url("git@github.com:example/certificates.git")
+
+# The branch to use on the git repo
+git_branch("main")
+
+# Storage mode for certificates and profiles
+storage_mode("git")
+
+# The default keychain name where match should install the certificates
+keychain_name("login.keychain")
+
+# Set to true if you want match to generate new profiles/certs if expired
+force_for_new_devices(true)
+
+# Set to true to encrypt/decrypt certificates using a password
+readonly(false)
+
+# The directory where your certificates will be stored locally
+clone_branch_directly(false)
+
+# Disable automatic cleaning of old/unused certificates and profiles
+shallow_clone(false)
+
+# Skip certificate verification
+skip_certificate_verification(false)
+
+# Platform to use (ios, macos)
+platform("ios")
+
+# The bundle identifier(s) of your app (from Appfile)
+username("developer@example.com") # Apple ID from Appfile
+
+# Set the profile type based on the certificate type
+profile_type("development")
+
+# Template name to use for provisioning profile generation
+template_name("iOS Development")
+
+# Set to true to skip docs generation
+skip_docs(true)
+
+# Set to true to include all devices for development profiles
+include_all_certificates(true)
+
+# Specify the provisioning profile output path
+output_path("./profiles")
+
+# Set to true to skip confirmation on certificate/profile generation
+skip_confirmation(false)
+
+# Set to true to skip Git status verification
+skip_git_status_report(false)
+
+# Set to true to generate profiles even if existing ones are valid
+force(false)
+
+# Set to true to download profiles only (skip certificates)
+download_profiles(false)
+
+# Set to true to skip certificate installation into keychain
+skip_certificate_installation(false)
