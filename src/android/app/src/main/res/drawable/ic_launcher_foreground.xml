@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+Requirements Addressed:
+8.1.1 Design Specifications - App Icon Design
+- Implements a visually appealing foreground layer for the adaptive launcher icon
+- Follows Material Design guidelines for launcher icon foregrounds
+- Ensures proper contrast with the blue background defined in ic_launcher_background.xml
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Main icon shape - stylized chat bubble -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,38h32c2.2,0 4,1.8 4,4v16c0,2.2 -1.8,4 -4,4h-4l-6,6l-6,-6H38c-2.2,0 -4,-1.8 -4,-4V42C34,39.8 35.8,38 38,38z"
+        android:fillAlpha="1"/>
+
+    <!-- Decorative elements - message lines -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M42,46h24v2h-24z"
+        android:fillAlpha="0.8"/>
+
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M42,52h16v2h-16z"
+        android:fillAlpha="0.8"/>
+
+    <!-- Material Design drop shadow -->
+    <path
+        android:fillColor="#000000"
+        android:pathData="M38,39h32c2.2,0 4,1.8 4,4v16c0,2.2 -1.8,4 -4,4h-4l-6,6l-6,-6H38c-2.2,0 -4,-1.8 -4,-4V43C34,40.8 35.8,39 38,39z"
+        android:fillAlpha="0.2"/>
+</vector>
