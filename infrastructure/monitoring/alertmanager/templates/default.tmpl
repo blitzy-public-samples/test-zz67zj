@@ -1,0 +1,181 @@
+{{ define "__subject" }}
+{{- /* Requirement: Monitoring and Observability - Alert formatting */ -}}
+{{- if .CommonLabels.alertname }}
+    {{- .CommonLabels.alertname }}
+{{- else }}
+    {{ template "__alert_severity" . }} Alert
+{{- end }}
+{{ end }}
+
+{{ define "__alert_severity" }}
+{{- if eq .CommonLabels.severity "critical" }}CRITICAL{{ end }}
+{{- if eq .CommonLabels.severity "warning" }}WARNING{{ end }}
+{{- if eq .CommonLabels.severity "info" }}INFO{{ end }}
+{{ end }}
+
+{{ define "__alert_status" }}
+{{- if eq .Status "firing" }}🔥 FIRING{{ end }}
+{{- if eq .Status "resolved" }}✅ RESOLVED{{ end }}
+{{ end }}
+
+{{ define "__standard_text" }}
+{{- /* Requirement: Monitoring and Observability - Comprehensive alert details */ -}}
+Status: {{ template "__alert_status" . }}
+Severity: {{ .CommonLabels.severity | toUpper }}
+{{ if .CommonLabels.cluster }}Cluster: {{ .CommonLabels.cluster }}{{ end }}
+{{ if .CommonLabels.namespace }}Namespace: {{ .CommonLabels.namespace }}{{ end }}
+
+{{ if .CommonAnnotations.summary }}Summary: {{ .CommonAnnotations.summary }}{{ end }}
+{{ if .CommonAnnotations.description }}Description: {{ .CommonAnnotations.description }}{{ end }}
+
+Affected Instances:
+{{- range .Alerts }}
+  - {{ .Labels.instance }}{{ if .Labels.exported_job }} ({{ .Labels.exported_job }}){{ end }}
+    Started: {{ .StartsAt | since }}
+    {{- if .EndsAt.After .StartsAt }}
+    Ended: {{ .EndsAt | since }}
+    {{- end }}
+    {{- if .Annotations.runbook_url }}
+    Runbook: {{ .Annotations.runbook_url }}
+    {{- end }}
+{{- end }}
+
+{{- if .CommonLabels.metric_type }}
+Metric Type: {{ .CommonLabels.metric_type }}
+{{- end }}
+
+{{- if .CommonLabels.service }}
+Service: {{ .CommonLabels.service }}
+{{- end }}
+
+{{- if .CommonLabels.job }}
+Job: {{ .CommonLabels.job }}
+{{- end }}
+
+Alert Details:
+{{- range .Alerts }}
+  Labels:
+  {{- range .Labels.SortedPairs }}
+    - {{ .Name }}: {{ .Value }}
+  {{- end }}
+  Annotations:
+  {{- range .Annotations.SortedPairs }}
+    - {{ .Name }}: {{ .Value }}
+  {{- end }}
+{{- end }}
+{{ end }}
+
+{{ define "email.default.subject" }}
+{{- /* Requirement: Monitoring and Observability - Email alert formatting */ -}}
+[{{ template "__alert_severity" . }}] {{ template "__subject" . }}
+{{ end }}
+
+{{ define "email.default.html" }}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ template "email.default.subject" . }}</title>
+    <style type="text/css">
+        body {
+            font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #333;
+        }
+        .alert-info {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+        }
+        .alert-critical {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="alert-info alert-{{ .CommonLabels.severity }}">
+        <pre>{{ template "__standard_text" . }}</pre>
+    </div>
+</body>
+</html>
+{{ end }}
+
+{{ define "slack.default.title" }}
+{{- /* Requirement: Monitoring and Observability - Slack alert formatting */ -}}
+{{ template "__alert_status" . }} {{ template "__subject" . }}
+{{ end }}
+
+{{ define "slack.default.text" }}
+{{- /* Requirement: Monitoring and Observability - Detailed Slack message */ -}}
+{{ template "__standard_text" . }}
+{{ end }}
+
+{{ define "pagerduty.default.description" }}
+{{- /* Requirement: Monitoring and Observability - PagerDuty alert formatting */ -}}
+{{ template "__subject" . }}
+{{ end }}
+
+{{ define "pagerduty.default.client" }}{{ template "__alert_severity" . }} Alert - Dog Walker Monitoring{{ end }}
+{{ define "pagerduty.default.clientURL" }}{{ .ExternalURL }}{{ end }}
+
+{{ define "webhook.default.message" }}
+{{- /* Requirement: Monitoring and Observability - Webhook payload formatting */ -}}
+{
+    "version": "4",
+    "groupKey": "{{ .GroupKey }}",
+    "truncatedAlerts": {{ .TruncatedAlerts }},
+    "status": "{{ .Status }}",
+    "receiver": "{{ .Receiver }}",
+    "groupLabels": {{ .GroupLabels | toJson }},
+    "commonLabels": {{ .CommonLabels | toJson }},
+    "commonAnnotations": {{ .CommonAnnotations | toJson }},
+    "externalURL": "{{ .ExternalURL }}",
+    "alerts": [
+    {{- range $index, $alert := .Alerts }}
+        {{- if $index }}, {{ end }}
+        {
+            "status": "{{ $alert.Status }}",
+            "labels": {{ $alert.Labels | toJson }},
+            "annotations": {{ $alert.Annotations | toJson }},
+            "startsAt": "{{ $alert.StartsAt }}",
+            "endsAt": "{{ $alert.EndsAt }}",
+            "generatorURL": "{{ $alert.GeneratorURL }}",
+            "fingerprint": "{{ $alert.Fingerprint }}"
+        }
+    {{- end }}
+    ]
+}
+{{ end }}
+
+{{ define "victorops.default.message" }}
+{{- /* Requirement: Monitoring and Observability - VictorOps alert formatting */ -}}
+{{ template "__subject" . }}
+{{ end }}
+
+{{ define "victorops.default.state_message" }}
+{{ template "__standard_text" . }}
+{{ end }}
+
+{{ define "opsgenie.default.message" }}
+{{- /* Requirement: Monitoring and Observability - OpsGenie alert formatting */ -}}
+{{ template "__subject" . }}
+{{ end }}
+
+{{ define "opsgenie.default.description" }}
+{{ template "__standard_text" . }}
+{{ end }}
