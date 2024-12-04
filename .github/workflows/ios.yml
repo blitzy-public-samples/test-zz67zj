@@ -1,0 +1,137 @@
+# Requirement Addressed: iOS CI/CD Pipeline (Technical Specification/9.5 Development & Deployment/CI/CD Pipeline)
+# This workflow automates the continuous integration and deployment process for the iOS application
+
+name: iOS CI/CD Pipeline
+
+# Trigger workflow on push or pull request events for main branch
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Environment variables used across jobs
+env:
+  DEVELOPER_APP_ID: ${{ secrets.DEVELOPER_APP_ID }}
+  DEVELOPER_APP_IDENTIFIER: ${{ secrets.DEVELOPER_APP_IDENTIFIER }}
+  PROVISIONING_PROFILE_SPECIFIER: ${{ secrets.PROVISIONING_PROFILE_SPECIFIER }}
+  TEMP_KEYCHAIN_PASSWORD: ${{ secrets.TEMP_KEYCHAIN_PASSWORD }}
+  TEMP_KEYCHAIN_USER: ${{ secrets.TEMP_KEYCHAIN_USER }}
+  APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+  APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+  APPLE_ID: ${{ secrets.APPLE_ID }}
+  APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+  MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+  WORKSPACE: "DogWalker.xcworkspace"
+  SCHEME: "DogWalker"
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: |
+          cd src/ios
+          bundle install
+          pod install
+
+      - name: Set up temporary keychain
+        run: |
+          security create-keychain -p "$TEMP_KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$TEMP_KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
+
+      - name: Import certificate
+        run: |
+          echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P $APPLE_CERTIFICATE_PASSWORD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $TEMP_KEYCHAIN_PASSWORD build.keychain
+
+      - name: Run tests
+        run: |
+          cd src/ios
+          ./scripts/test.sh
+
+      - name: Build application
+        run: |
+          cd src/ios
+          ./scripts/build.sh buildProject
+
+      - name: Upload test results
+        if: success() || failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: src/ios/TestResults
+
+  deploy:
+    name: Deploy
+    needs: build-and-test
+    runs-on: macos-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+          bundler-cache: true
+
+      - name: Install dependencies
+        run: |
+          cd src/ios
+          bundle install
+          pod install
+
+      - name: Set up temporary keychain
+        run: |
+          security create-keychain -p "$TEMP_KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$TEMP_KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
+
+      - name: Import certificate
+        run: |
+          echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
+          security import certificate.p12 -k build.keychain -P $APPLE_CERTIFICATE_PASSWORD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $TEMP_KEYCHAIN_PASSWORD build.keychain
+
+      - name: Deploy to TestFlight
+        env:
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+        run: |
+          cd src/ios
+          ./scripts/deploy.sh
+
+      - name: Clean up keychain
+        if: always()
+        run: |
+          security delete-keychain build.keychain
+
+      - name: Upload IPA
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release
+          path: src/ios/build/*.ipa
+
+# Human Tasks Required:
+# 1. Configure Apple Developer Portal access credentials in repository secrets
+# 2. Set up code signing certificates and provisioning profiles
+# 3. Configure App Store Connect API key for automated uploads
+# 4. Set up proper environment variables for different deployment targets
