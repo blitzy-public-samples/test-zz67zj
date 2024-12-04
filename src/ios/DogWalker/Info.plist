@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Requirement: Application Metadata - Technical Specification/8.1 User Interface Design/8.1.1 Design Specifications -->
+    <key>CFBundleIdentifier</key>
+    <string>com.dogwalker.app</string>
+    
+    <key>CFBundleName</key>
+    <string>DogWalker</string>
+    
+    <!-- Requirement: Localization Support - Technical Specification/8.1 User Interface Design/8.1.1 Design Specifications -->
+    <key>CFBundleDisplayName</key>
+    <string>${PRODUCT_NAME}</string>
+    
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    
+    <key>CFBundleDevelopmentRegion</key>
+    <string>en</string>
+    
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    
+    <!-- Required device capabilities -->
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>armv7</string>
+        <string>gps</string>
+    </array>
+    
+    <!-- Supported interface orientations -->
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    
+    <!-- Permission descriptions -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>This app requires location access to track your dog's walk.</string>
+    
+    <key>NSCameraUsageDescription</key>
+    <string>This app requires camera access to upload photos of your dog.</string>
+    
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>This app requires access to your photo library to upload photos of your dog.</string>
+    
+    <key>NSPushNotificationsUsageDescription</key>
+    <string>This app requires push notifications to notify you about walk updates.</string>
+    
+    <!-- Background modes for location updates -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+        <string>remote-notification</string>
+    </array>
+    
+    <!-- Launch screen configuration -->
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    
+    <!-- Main storyboard configuration -->
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+    
+    <!-- Minimum iOS version -->
+    <key>MinimumOSVersion</key>
+    <string>13.0</string>
+    
+    <!-- Privacy - Location Always Usage Description -->
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>This app requires location access to track your dog's walk, even when the app is in the background.</string>
+    
+    <!-- Maps API Key from Constants.swift -->
+    <key>GoogleMapsApiKey</key>
+    <string>${MAP_API_KEY}</string>
+    
+    <!-- Localization support -->
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+    </array>
+    
+    <!-- App Transport Security -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>api.dogwalker.com</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <false/>
+                <key>NSExceptionRequiresForwardSecrecy</key>
+                <true/>
+                <key>NSExceptionMinimumTLSVersion</key>
+                <string>TLSv1.2</string>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+</dict>
+</plist>
