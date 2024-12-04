@@ -1,0 +1,172 @@
+# Human Tasks:
+# 1. Configure appropriate resource quotas and limits based on load testing results
+# 2. Set up monitoring and alerting for the service
+# 3. Configure network policies for the service
+# 4. Set up horizontal pod autoscaling based on metrics
+# 5. Review and adjust readiness/liveness probe settings based on application behavior
+# 6. Configure appropriate backup and disaster recovery procedures
+
+# Addresses requirement: Technical Specification/7.4.2 Deployment Architecture
+# Ensures the Booking Service is deployed and managed within the Kubernetes cluster
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: booking-service-config
+  labels:
+    app: booking-service
+data:
+  BOOKING_SERVICE_PORT: "8080"
+  # Additional configuration values can be added here
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: booking-service-secrets
+  labels:
+    app: booking-service
+type: Opaque
+data:
+  # Base64 encoded database URL - to be replaced with actual value
+  BOOKING_DATABASE_URL: cG9zdGdyZXM6Ly9sb2NhbGhvc3Q6NTQzMi9ib29raW5nX3NlcnZpY2U=
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking-service-deployment
+  labels:
+    app: booking-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: booking-service
+  template:
+    metadata:
+      labels:
+        app: booking-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: booking-service
+        image: booking-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: BOOKING_SERVICE_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: booking-service-config
+              key: BOOKING_SERVICE_PORT
+        - name: BOOKING_DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: booking-service-secrets
+              key: BOOKING_DATABASE_URL
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/booking
+          readOnly: true
+      volumes:
+      - name: config-volume
+        configMap:
+          name: booking-service-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking-service
+  labels:
+    app: booking-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: booking-service
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: booking-service-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: booking-service-deployment
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: booking-service-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app: booking-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api-gateway
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
