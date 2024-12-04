@@ -1,0 +1,170 @@
+# GitHub Actions workflow for backend services CI/CD
+# Addresses requirement: CI/CD Pipeline for Backend Services (9.5 Development & Deployment/CI/CD Pipeline)
+
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/backend/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/backend/**'
+
+env:
+  DOCKER_REGISTRY: ${{ vars.DOCKER_REGISTRY || 'docker.io/dogwalker' }}
+  K8S_NAMESPACE: ${{ vars.K8S_NAMESPACE || 'dogwalker-backend' }}
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          cd src/backend
+          npm ci
+          
+      - name: Run tests
+        run: |
+          cd src/backend
+          npm test
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        
+      - name: Login to Docker Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          
+      # Build and push Docker images for each service
+      - name: Build and push API Gateway
+        uses: docker/build-push-action@v3
+        with:
+          context: ./src/backend/api-gateway
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/api-gateway:${{ github.sha }}
+          
+      - name: Build and push Auth Service
+        uses: docker/build-push-action@v3
+        with:
+          context: ./src/backend/auth-service
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/auth-service:${{ github.sha }}
+          
+      - name: Build and push Booking Service
+        uses: docker/build-push-action@v3
+        with:
+          context: ./src/backend/booking-service
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/booking-service:${{ github.sha }}
+          
+      - name: Build and push Notification Service
+        uses: docker/build-push-action@v3
+        with:
+          context: ./src/backend/notification-service
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/notification-service:${{ github.sha }}
+          
+      - name: Build and push Payment Service
+        uses: docker/build-push-action@v3
+        with:
+          context: ./src/backend/payment-service
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/payment-service:${{ github.sha }}
+          
+      - name: Build and push Tracking Service
+        uses: docker/build-push-action@v3
+        with:
+          context: ./src/backend/tracking-service
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/tracking-service:${{ github.sha }}
+
+  deploy:
+    name: Deploy to Kubernetes
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up kubectl
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          
+      - name: Update Kubernetes manifests
+        run: |
+          cd src/backend/k8s
+          for service in api-gateway auth-service booking-service notification-service payment-service tracking-service; do
+            sed -i "s|image:.*|image: ${{ env.DOCKER_REGISTRY }}/$service:${{ github.sha }}|g" $service.yaml
+          done
+          
+      - name: Deploy to Kubernetes
+        uses: azure/k8s-deploy@v3
+        with:
+          namespace: ${{ env.K8S_NAMESPACE }}
+          manifests: |
+            src/backend/k8s/api-gateway.yaml
+            src/backend/k8s/auth-service.yaml
+            src/backend/k8s/booking-service.yaml
+            src/backend/k8s/notification-service.yaml
+            src/backend/k8s/payment-service.yaml
+            src/backend/k8s/tracking-service.yaml
+          
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/api-gateway -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/auth-service -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/booking-service -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/notification-service -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/payment-service -n ${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/tracking-service -n ${{ env.K8S_NAMESPACE }}
+
+  integration-tests:
+    name: Run Integration Tests
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install test dependencies
+        run: |
+          cd src/backend
+          npm ci
+          
+      - name: Run integration tests
+        run: |
+          cd src/backend
+          npm run test:integration
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
