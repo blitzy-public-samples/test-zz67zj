@@ -1,0 +1,145 @@
+# Prometheus Configuration File
+# Version: 2.41.0
+# Purpose: Defines monitoring configuration for the Dog Walker Booking application
+
+# Human Tasks:
+# 1. Ensure Alertmanager (v0.24.0) is properly configured and running
+# 2. Verify network access between Prometheus and target services
+# 3. Configure firewall rules to allow scraping on specified ports
+# 4. Set up appropriate authentication for Prometheus endpoints
+# 5. Review and adjust alert thresholds based on production metrics
+
+# Requirement: Monitoring and Observability (Technical Specification/7.4 Cross-Cutting Concerns/7.4.1 Monitoring and Observability)
+# Provides configuration for system health monitoring, metrics collection, and alerting
+
+global:
+  scrape_interval: 15s     # Set the scrape interval to every 15 seconds
+  evaluation_interval: 15s # Evaluate rules every 15 seconds
+  external_labels:
+    monitor: 'dog-walker-monitor'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+      scheme: http
+      timeout: 10s
+      api_version: v2
+
+# Rule files specifying alert conditions
+rule_files:
+  - "rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Self monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API Services monitoring
+  - job_name: 'api-services'
+    metrics_path: '/metrics'
+    scheme: https
+    scrape_interval: 10s
+    static_configs:
+      - targets:
+        - 'user-service:8080'
+        - 'booking-service:8080'
+        - 'payment-service:8080'
+        - 'tracking-service:8080'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        regex: '(.*):.*'
+        replacement: '$1'
+
+  # Node monitoring
+  - job_name: 'node'
+    static_configs:
+      - targets:
+        - 'node-exporter:9100'
+    scrape_interval: 30s
+    metrics_path: '/metrics'
+
+  # Kubernetes monitoring
+  - job_name: 'kubernetes-apiservers'
+    kubernetes_sd_configs:
+      - role: endpoints
+    scheme: https
+    tls_config:
+      ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+    bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_service_name]
+        action: keep
+        regex: default;kubernetes
+
+  # Database monitoring
+  - job_name: 'postgresql'
+    static_configs:
+      - targets:
+        - 'postgres-exporter:9187'
+    metrics_path: '/metrics'
+
+  # Redis monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets:
+        - 'redis-exporter:9121'
+    metrics_path: '/metrics'
+
+# Alert rules configuration
+alerting_rules:
+  groups:
+    - name: example-alert-rules
+      rules:
+        - alert: HighCPUUsage
+          expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: High CPU usage detected on instance {{ $labels.instance }}
+            description: CPU usage is above 80% for more than 2 minutes.
+
+        - alert: HighMemoryUsage
+          expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: High memory usage detected on instance {{ $labels.instance }}
+            description: Available memory is less than 20% for more than 5 minutes.
+
+# Recording rules for frequently used queries
+recording_rules:
+  groups:
+    - name: example-recording-rules
+      rules:
+        - record: node:cpu_usage:rate5m
+          expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+        - record: node:memory_available:ratio
+          expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes
+
+# Storage configuration
+storage:
+  tsdb:
+    path: /prometheus
+    retention:
+      time: 15d
+      size: 50GB
+    wal:
+      retention:
+        time: 12h
+
+# Web interface configuration
+web:
+  listen_address: 0.0.0.0:9090
+  external_url: http://prometheus.dogwalker.local
+  page_title: Dog Walker Monitoring
+  cors:
+    cors_origins: ['*']
