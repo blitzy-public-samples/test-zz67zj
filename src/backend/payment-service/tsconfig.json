@@ -1,0 +1,62 @@
+{
+  /* 
+   * Human Tasks:
+   * 1. Ensure all developers use the same TypeScript version (4.8.4) for consistent compilation
+   * 2. Configure IDE/editor to use project's TypeScript version
+   * 3. Review and adjust module resolution settings if new dependencies are added
+   * 4. Ensure build pipeline respects these TypeScript configuration settings
+   */
+
+  /* 
+   * TypeScript Configuration for Payment Service
+   * Addresses requirement: Technical Specification/7.3 Technical Decisions/Programming Languages
+   * Ensures consistent TypeScript compilation settings across the Payment Service.
+   */
+  "compilerOptions": {
+    /* Basic Options */
+    "target": "ES2020",                       /* Specify ECMAScript target version */
+    "module": "CommonJS",                     /* Specify module code generation */
+    "outDir": "./dist",                       /* Redirect output structure to the directory */
+    "rootDir": "./src",                       /* Specify the root directory of input files */
+    
+    /* Strict Type-Checking Options */
+    "strict": true,                           /* Enable all strict type-checking options */
+    
+    /* Module Resolution Options */
+    "esModuleInterop": true,                  /* Enables emit interoperability between CommonJS and ES Modules */
+    "skipLibCheck": true,                     /* Skip type checking of declaration files */
+    "resolveJsonModule": true,                /* Include modules imported with .json extension */
+    
+    /* Additional Checks */
+    "noUnusedLocals": true,                  /* Report errors on unused locals */
+    "noUnusedParameters": true,              /* Report errors on unused parameters */
+    "noImplicitReturns": true,              /* Report error when not all code paths in function return a value */
+    "noFallthroughCasesInSwitch": true,     /* Report errors for fallthrough cases in switch statement */
+    
+    /* Advanced Options */
+    "forceConsistentCasingInFileNames": true, /* Ensure consistent casing in file names */
+    "experimentalDecorators": true,           /* Enables experimental support for decorators */
+    "emitDecoratorMetadata": true,           /* Enables experimental support for emitting type metadata for decorators */
+    
+    /* Source Map Options */
+    "sourceMap": true,                        /* Generates corresponding .map file */
+    "declaration": true,                      /* Generates corresponding .d.ts file */
+    
+    /* Path Aliases */
+    "baseUrl": ".",                          /* Base directory to resolve non-relative module names */
+    "paths": {
+      "@/*": ["src/*"],                      /* Path alias for src directory */
+      "@shared/*": ["../../shared/*"]        /* Path alias for shared directory */
+    }
+  },
+  
+  /* File Inclusion/Exclusion */
+  "include": [
+    "./src/**/*.ts"                          /* Include all TypeScript files in src directory */
+  ],
+  "exclude": [
+    "node_modules",                          /* Exclude node_modules directory */
+    "dist",                                  /* Exclude distribution directory */
+    "test"                                   /* Exclude test directory */
+  ]
+}
