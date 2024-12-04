@@ -1,0 +1,17 @@
+/* 
+  Localizable.strings
+  DogWalker
+  
+  Requirement 8.1.1: Internationalization - English localization strings
+*/
+
+// MARK: - Authentication
+"login_button" = "Log In";
+"register_button" = "Register";
+
+// MARK: - Home Screen
+"home_title" = "Welcome to DogWalker";
+
+// MARK: - Messages
+"error_message_generic" = "An error occurred. Please try again.";
+"success_message_booking" = "Your booking has been confirmed!";
