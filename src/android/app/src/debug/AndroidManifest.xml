@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Debug-specific AndroidManifest.xml for the Dog Walker application.
+    
+    Requirement addressed: Debugging and Testing (7.4 Cross-Cutting Concerns/Monitoring and Observability)
+    Provides debug-specific configurations and permissions for development and testing purposes.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Debug-specific permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <application
+        android:debuggable="true"
+        tools:ignore="HardcodedDebugMode">
+
+        <!-- Stetho initialization for debug builds -->
+        <!-- Requirement addressed: Debugging and Testing (7.4) - Network inspection tools -->
+        <meta-data
+            android:name="com.facebook.stetho.DefaultDumperPluginsBuilder"
+            android:value="com.facebook.stetho.dumpapp.plugins" />
+
+        <!-- Allow cleartext traffic for debug builds -->
+        android:usesCleartextTraffic="true"
+        tools:targetApi="m"
+
+        <!-- Debug activity declarations -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true" />
+
+        <!-- Debug services -->
+        <service
+            android:name=".service.LocationService"
+            android:exported="false" />
+
+        <service
+            android:name=".service.NotificationService"
+            android:exported="false" />
+
+    </application>
+
+</manifest>
