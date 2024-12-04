@@ -1,0 +1,165 @@
+# Requirement addressed: Infrastructure Automation (Technical Specification/7.4.3 Security Architecture)
+# This workflow automates the provisioning and deployment of AWS infrastructure resources using Terraform and GitHub Actions.
+
+name: Infrastructure Automation
+
+# Trigger workflow on push to main/develop branches or manual dispatch
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+# Environment variables used across jobs
+env:
+  TF_VAR_environment: ${{ github.ref == 'refs/heads/main' && 'prod' || 'dev' }}
+  MONITORING_NAMESPACE: monitoring
+
+# Define workflow jobs
+jobs:
+  # Initialize Terraform and validate configurations
+  initialize:
+    name: Initialize Terraform
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.0'
+      
+      - name: Initialize Terraform
+        run: |
+          cd infrastructure/terraform/aws
+          terraform init \
+            -backend=true \
+            -backend-config="bucket=dogwalker-terraform-state-${TF_VAR_environment}" \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="region=${{ secrets.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="dynamodb_table=dogwalker-terraform-locks-${TF_VAR_environment}"
+      
+      - name: Validate Terraform configuration
+        run: |
+          cd infrastructure/terraform/aws
+          terraform validate
+
+  # Apply Terraform configurations
+  apply:
+    name: Apply Terraform
+    needs: initialize
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: '1.5.0'
+      
+      - name: Plan Terraform changes
+        run: |
+          cd infrastructure/terraform/aws
+          terraform plan -out=tfplan
+      
+      - name: Apply Terraform changes
+        run: |
+          cd infrastructure/terraform/aws
+          terraform apply -auto-approve tfplan
+
+  # Setup monitoring stack
+  setup-monitoring:
+    name: Setup Monitoring
+    needs: apply
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Configure kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.27.0'
+      
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: 'v3.12.0'
+      
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --region ${{ secrets.AWS_REGION }} \
+            --name dogwalker-${TF_VAR_environment}
+      
+      - name: Deploy monitoring stack
+        run: |
+          # Create monitoring namespace
+          kubectl create namespace ${MONITORING_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Deploy Prometheus
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm upgrade --install prometheus prometheus-community/prometheus \
+            --namespace ${MONITORING_NAMESPACE} \
+            --values infrastructure/monitoring/prometheus/values.yaml
+          
+          # Deploy Grafana
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo update
+          helm upgrade --install grafana grafana/grafana \
+            --namespace ${MONITORING_NAMESPACE} \
+            --values infrastructure/monitoring/grafana/values.yaml
+          
+          # Deploy Loki
+          helm upgrade --install loki grafana/loki-stack \
+            --namespace ${MONITORING_NAMESPACE} \
+            --values infrastructure/monitoring/loki/values.yaml
+          
+          # Deploy Tempo
+          helm upgrade --install tempo grafana/tempo \
+            --namespace ${MONITORING_NAMESPACE} \
+            --values infrastructure/monitoring/tempo/values.yaml
+      
+      - name: Configure monitoring dashboards
+        run: |
+          # Import Grafana dashboards
+          kubectl -n ${MONITORING_NAMESPACE} create configmap grafana-dashboards \
+            --from-file=infrastructure/monitoring/grafana/dashboards/ \
+            --dry-run=client -o yaml | kubectl apply -f -
+      
+      - name: Verify monitoring stack
+        run: |
+          # Wait for all pods to be ready
+          kubectl -n ${MONITORING_NAMESPACE} wait --for=condition=ready pod --all --timeout=300s
+          
+          # Verify services are running
+          kubectl -n ${MONITORING_NAMESPACE} get pods,svc
