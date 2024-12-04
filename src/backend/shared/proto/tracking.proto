@@ -1,0 +1,123 @@
+// Protocol Buffers v3 schema for tracking-related data and operations
+// Addresses requirement: Technical Specification/7.2.1 Core Components/Tracking Service
+// Handles real-time location processing for tracking dog walks.
+
+syntax = "proto3";
+
+package tracking;
+
+option go_package = "backend/shared/proto/tracking";
+
+import "google/protobuf/timestamp.proto";
+import "src/backend/shared/proto/booking.proto";
+import "src/backend/shared/proto/payment.proto";
+
+// Represents a geographical location with coordinates and address
+// Addresses requirement: Technical Specification/7.2.1 Core Components/Tracking Service
+message Location {
+    double latitude = 1;
+    double longitude = 2;
+    string address = 3;
+}
+
+// Represents a user in the tracking system
+// Addresses requirement: Technical Specification/7.2.1 Core Components/Tracking Service
+message User {
+    string id = 1;
+    string email = 2;
+}
+
+// Represents a tracking session for a dog walk
+// Addresses requirement: Technical Specification/7.2.1 Core Components/Tracking Service
+message TrackingSession {
+    string id = 1;
+    string booking_id = 2;
+    string walker_id = 3;
+    string owner_id = 4;
+    TrackingStatus status = 5;
+    Location start_location = 6;
+    Location current_location = 7;
+    Location end_location = 8;
+    google.protobuf.Timestamp started_at = 9;
+    google.protobuf.Timestamp ended_at = 10;
+    repeated Location route_points = 11;
+    double distance_covered = 12;
+    double duration_minutes = 13;
+    booking.Booking booking = 14;
+    payment.Payment payment = 15;
+}
+
+// Enum for tracking status
+enum TrackingStatus {
+    TRACKING_STATUS_UNSPECIFIED = 0;
+    TRACKING_STATUS_PENDING = 1;
+    TRACKING_STATUS_ACTIVE = 2;
+    TRACKING_STATUS_PAUSED = 3;
+    TRACKING_STATUS_COMPLETED = 4;
+    TRACKING_STATUS_CANCELLED = 5;
+}
+
+// Service definition for tracking operations
+service TrackingService {
+    // Start a new tracking session
+    rpc StartTracking(StartTrackingRequest) returns (TrackingSession);
+    
+    // Update tracking location
+    rpc UpdateLocation(UpdateLocationRequest) returns (TrackingSession);
+    
+    // End tracking session
+    rpc EndTracking(EndTrackingRequest) returns (TrackingSession);
+    
+    // Get tracking session by ID
+    rpc GetTrackingSession(GetTrackingSessionRequest) returns (TrackingSession);
+    
+    // List tracking sessions with filters
+    rpc ListTrackingSessions(ListTrackingSessionsRequest) returns (ListTrackingSessionsResponse);
+    
+    // Stream real-time location updates
+    rpc StreamLocation(StreamLocationRequest) returns (stream Location);
+}
+
+message StartTrackingRequest {
+    string booking_id = 1;
+    string walker_id = 2;
+    string owner_id = 3;
+    Location start_location = 4;
+}
+
+message UpdateLocationRequest {
+    string tracking_id = 1;
+    Location current_location = 2;
+    TrackingStatus status = 3;
+}
+
+message EndTrackingRequest {
+    string tracking_id = 1;
+    Location end_location = 2;
+    double distance_covered = 3;
+    double duration_minutes = 4;
+}
+
+message GetTrackingSessionRequest {
+    string tracking_id = 1;
+}
+
+message ListTrackingSessionsRequest {
+    string user_id = 1;
+    TrackingStatus status = 2;
+    google.protobuf.Timestamp start_date = 3;
+    google.protobuf.Timestamp end_date = 4;
+    int32 page_size = 5;
+    string page_token = 6;
+}
+
+message ListTrackingSessionsResponse {
+    repeated TrackingSession sessions = 1;
+    string next_page_token = 2;
+    int32 total_count = 3;
+}
+
+message StreamLocationRequest {
+    string tracking_id = 1;
+    string user_id = 2;
+}
