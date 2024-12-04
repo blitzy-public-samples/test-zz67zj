@@ -1,0 +1,104 @@
+// Protocol Buffers v3 schema for payment-related data and operations
+// Addresses requirement: Technical Specification/1.3 Scope/Core Features/Payments
+// Handles secure payment processing, automated billing, and receipt generation.
+
+syntax = "proto3";
+
+package payment;
+
+option go_package = "backend/shared/proto/payment";
+
+import "google/protobuf/timestamp.proto";
+import "src/backend/shared/proto/booking.proto";
+
+// Represents a payment entity with all associated data
+// Addresses requirement: Technical Specification/1.3 Scope/Core Features/Payments
+message Payment {
+    string id = 1;
+    string user_id = 2;
+    double amount = 3;
+    string currency = 4;
+    PaymentStatus status = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+    string booking_id = 8;
+    PaymentMethod payment_method = 9;
+    string transaction_id = 10;
+    string receipt_url = 11;
+}
+
+// Enum for payment status
+enum PaymentStatus {
+    PAYMENT_STATUS_UNSPECIFIED = 0;
+    PAYMENT_STATUS_PENDING = 1;
+    PAYMENT_STATUS_PROCESSING = 2;
+    PAYMENT_STATUS_COMPLETED = 3;
+    PAYMENT_STATUS_FAILED = 4;
+    PAYMENT_STATUS_REFUNDED = 5;
+}
+
+// Enum for payment methods
+enum PaymentMethod {
+    PAYMENT_METHOD_UNSPECIFIED = 0;
+    PAYMENT_METHOD_CREDIT_CARD = 1;
+    PAYMENT_METHOD_DEBIT_CARD = 2;
+    PAYMENT_METHOD_BANK_TRANSFER = 3;
+    PAYMENT_METHOD_DIGITAL_WALLET = 4;
+}
+
+// Service definition for payment operations
+service PaymentService {
+    // Create a new payment
+    rpc CreatePayment(CreatePaymentRequest) returns (Payment);
+    
+    // Process a payment
+    rpc ProcessPayment(ProcessPaymentRequest) returns (Payment);
+    
+    // Get payment by ID
+    rpc GetPayment(GetPaymentRequest) returns (Payment);
+    
+    // List payments with filters
+    rpc ListPayments(ListPaymentsRequest) returns (ListPaymentsResponse);
+    
+    // Refund a payment
+    rpc RefundPayment(RefundPaymentRequest) returns (Payment);
+}
+
+message CreatePaymentRequest {
+    string user_id = 1;
+    double amount = 2;
+    string currency = 3;
+    string booking_id = 4;
+    PaymentMethod payment_method = 5;
+}
+
+message ProcessPaymentRequest {
+    string payment_id = 1;
+    PaymentMethod payment_method = 2;
+    string payment_token = 3;
+}
+
+message GetPaymentRequest {
+    string payment_id = 1;
+}
+
+message ListPaymentsRequest {
+    string user_id = 1;
+    PaymentStatus status = 2;
+    google.protobuf.Timestamp start_date = 3;
+    google.protobuf.Timestamp end_date = 4;
+    int32 page_size = 5;
+    string page_token = 6;
+}
+
+message ListPaymentsResponse {
+    repeated Payment payments = 1;
+    string next_page_token = 2;
+    int32 total_count = 3;
+}
+
+message RefundPaymentRequest {
+    string payment_id = 1;
+    double refund_amount = 2;
+    string reason = 3;
+}
