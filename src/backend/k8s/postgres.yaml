@@ -1,0 +1,131 @@
+# PostgreSQL Kubernetes Configuration for Dog Walker Platform
+# Addresses requirement 7.2.2 Data Storage Components: Deploy and manage a PostgreSQL instance
+# to handle relational data storage for backend services.
+
+---
+# PersistentVolumeClaim for PostgreSQL data persistence
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: default
+  labels:
+    app: dog-walker-platform
+    tier: database
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # Adjust size based on data requirements
+  storageClassName: standard  # Use your cluster's storage class
+
+---
+# PostgreSQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: default
+  labels:
+    app: dog-walker-platform
+    tier: database
+spec:
+  replicas: 1  # Single replica for primary PostgreSQL instance
+  selector:
+    matchLabels:
+      app: dog-walker-platform
+      tier: database
+  strategy:
+    type: Recreate  # Ensures data consistency during updates
+  template:
+    metadata:
+      labels:
+        app: dog-walker-platform
+        tier: database
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:15.3-alpine  # Using stable Alpine-based PostgreSQL image
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          env:
+            - name: POSTGRES_DB
+              value: "dogwalker"
+            - name: POSTGRES_USER
+              value: "dogwalker_user"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: DB_PASSWORD
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          livenessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - dogwalker_user
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          readinessProbe:
+            exec:
+              command:
+                - pg_isready
+                - -U
+                - dogwalker_user
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+      securityContext:
+        fsGroup: 999  # PostgreSQL group ID
+        runAsUser: 999  # PostgreSQL user ID
+
+---
+# PostgreSQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: default
+  labels:
+    app: dog-walker-platform
+    tier: database
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: postgres
+  selector:
+    app: dog-walker-platform
+    tier: database
+
+---
+# Human Tasks Required:
+# 1. Ensure the storage class specified in PVC exists in the cluster
+# 2. Verify the backup and disaster recovery procedures are in place
+# 3. Configure PostgreSQL performance parameters based on workload
+# 4. Set up monitoring and alerting for the database
+# 5. Implement regular database maintenance procedures
+# 6. Configure network policies to restrict database access
+# 7. Review and adjust resource limits based on actual usage patterns
