@@ -1,0 +1,95 @@
+{
+  // Addresses requirement: Technical Specification/9.5 Development & Deployment
+  // Ensures consistent TypeScript compilation settings for the authentication service
+  "compilerOptions": {
+    // Target ES2020 for modern JavaScript features while maintaining compatibility
+    "target": "ES2020",
+    
+    // Use CommonJS modules for Node.js compatibility
+    "module": "CommonJS",
+    
+    // Enable strict type checking
+    "strict": true,
+    
+    // Enable interop between CommonJS and ES modules
+    "esModuleInterop": true,
+    
+    // Skip type checking of declaration files for better performance
+    "skipLibCheck": true,
+    
+    // Output directory for compiled files
+    "outDir": "./dist",
+    
+    // Source directory containing TypeScript files
+    "rootDir": "./src",
+    
+    // Enable experimental decorators for class-validator
+    "experimentalDecorators": true,
+    
+    // Enable emit decorator metadata for class-validator
+    "emitDecoratorMetadata": true,
+    
+    // Generate source maps for debugging
+    "sourceMap": true,
+    
+    // Allow importing JSON files
+    "resolveJsonModule": true,
+    
+    // Ensure case sensitivity in imports
+    "forceConsistentCasingInFileNames": true,
+    
+    // Enable incremental compilation
+    "incremental": true,
+    
+    // Base directory for module resolution
+    "baseUrl": ".",
+    
+    // Module resolution strategy
+    "moduleResolution": "node",
+    
+    // Allow JavaScript files
+    "allowJs": true,
+    
+    // Check JavaScript files
+    "checkJs": true,
+    
+    // Remove comments in output
+    "removeComments": false,
+    
+    // Preserve const enums
+    "preserveConstEnums": true,
+    
+    // No implicit any types
+    "noImplicitAny": true,
+    
+    // No implicit this
+    "noImplicitThis": true,
+    
+    // Strict null checks
+    "strictNullChecks": true,
+    
+    // Strict function types
+    "strictFunctionTypes": true,
+    
+    // Strict property initialization
+    "strictPropertyInitialization": true,
+    
+    // No implicit returns
+    "noImplicitReturns": true,
+    
+    // No unused locals
+    "noUnusedLocals": true,
+    
+    // No unused parameters
+    "noUnusedParameters": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ]
+}
