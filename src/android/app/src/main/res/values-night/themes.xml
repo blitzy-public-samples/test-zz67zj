@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Night mode theme resources for the Android application
+    Requirements addressed:
+    - 8.1.1 Design Specifications/User Interface Design: Ensures consistent theming across the Android application by integrating dark mode color, shape, and typography styles
+    - 8.1.1 Design Specifications/Theming: Supports dark mode theming with a consistent color palette and styling
+-->
+<resources>
+    <!-- Base application theme for night mode -->
+    <style name="Theme.DogWalker" parent="Theme.Material3.DarkCompat.NoActionBar">
+        <!-- Primary brand colors -->
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorPrimaryVariant">@color/primary_variant</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
+
+        <!-- Secondary brand colors -->
+        <item name="colorSecondary">@color/secondary_color</item>
+        <item name="colorOnSecondary">@color/on_secondary</item>
+
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/background_color</item>
+        <item name="colorOnBackground">@color/on_background</item>
+
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/surface_color</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+
+        <!-- Error colors -->
+        <item name="colorError">@color/error_color</item>
+        <item name="colorOnError">@color/on_error</item>
+
+        <!-- Status bar and navigation bar -->
+        <item name="android:statusBarColor">@color/primary_variant</item>
+        <item name="android:navigationBarColor">@color/surface_color</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+
+        <!-- Material shape attributes -->
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.DogWalker.SmallComponent</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.DogWalker.MediumComponent</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.DogWalker.LargeComponent</item>
+
+        <!-- Typography styles -->
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.DogWalker.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.DogWalker.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.DogWalker.HeadlineSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.DogWalker.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.DogWalker.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.DogWalker.BodySmall</item>
+    </style>
+
+    <!-- Shape Appearances -->
+    <style name="ShapeAppearance.DogWalker.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">4dp</item>
+    </style>
+
+    <style name="ShapeAppearance.DogWalker.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+
+    <style name="ShapeAppearance.DogWalker.LargeComponent" parent="ShapeAppearance.Material3.LargeComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item>
+    </style>
+
+    <!-- Typography Styles -->
+    <style name="TextAppearance.DogWalker.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textSize">24sp</item>
+        <item name="android:textColor">@color/on_background</item>
+        <item name="android:fontFamily">@font/roboto</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+
+    <style name="TextAppearance.DogWalker.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/on_background</item>
+        <item name="android:fontFamily">@font/roboto</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+
+    <style name="TextAppearance.DogWalker.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/on_background</item>
+        <item name="android:fontFamily">@font/roboto</item>
+        <item name="android:textFontWeight">500</item>
+    </style>
+
+    <style name="TextAppearance.DogWalker.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/on_background</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textFontWeight">400</item>
+    </style>
+
+    <style name="TextAppearance.DogWalker.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/on_background</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textFontWeight">400</item>
+    </style>
+
+    <style name="TextAppearance.DogWalker.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/on_background</item>
+        <item name="android:fontFamily">@font/inter</item>
+        <item name="android:textFontWeight">400</item>
+    </style>
+</resources>
