@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+Requirements Addressed:
+8.1.1 Design Specifications - App Icon Design
+- Implements a visually appealing and adaptive round launcher icon
+- Follows Material Design guidelines for launcher icons
+- Ensures proper layering of foreground and background elements
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background layer using the blue gradient background -->
+    <background android:drawable="@drawable/ic_launcher_background"/>
+    
+    <!-- Foreground layer with the chat bubble icon -->
+    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
+    
+    <!-- Monochrome layer for Android 13+ support -->
+    <monochrome android:drawable="@drawable/ic_launcher_foreground"/>
+</adaptive-icon>
