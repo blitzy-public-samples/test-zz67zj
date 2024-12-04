@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Color resources for the Android application
+    Requirements addressed:
+    - 8.1.1 Design Specifications/Theming: Supports light and dark mode theming with a consistent color palette
+    - 8.1.1 Design Specifications/User Interface Design: Ensures consistent color theming and styling across the Android application, adhering to Material Design 3 guidelines
+-->
+<resources>
+    <!-- Primary brand color -->
+    <color name="primary_color">#6200EE</color>
+    <color name="primary_variant">#3700B3</color>
+
+    <!-- Secondary brand color -->
+    <color name="secondary_color">#03DAC6</color>
+
+    <!-- Background and surface colors -->
+    <color name="background_color">#FFFFFF</color>
+    <color name="surface_color">#FFFFFF</color>
+
+    <!-- Error color -->
+    <color name="error_color">#B00020</color>
+
+    <!-- On colors (text/icon colors that appear on top of the main colors) -->
+    <color name="on_primary">#FFFFFF</color>
+    <color name="on_secondary">#000000</color>
+    <color name="on_background">#000000</color>
+    <color name="on_surface">#000000</color>
+    <color name="on_error">#FFFFFF</color>
+</resources>
