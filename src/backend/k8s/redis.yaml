@@ -1,0 +1,119 @@
+# Redis Deployment Configuration for Dog Walker Platform
+# Addresses requirement 7.2.2 Data Storage Components: Caching and Session Management
+# This configuration deploys and manages a Redis instance for backend services
+
+---
+# PersistentVolumeClaim for Redis data persistence
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data-pvc
+  namespace: default
+  labels:
+    app: dog-walker-platform
+    component: redis
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# Redis Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: default
+  labels:
+    app: dog-walker-platform
+    component: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dog-walker-platform
+      component: redis
+  template:
+    metadata:
+      labels:
+        app: dog-walker-platform
+        component: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.0-alpine  # Using stable Alpine-based Redis image
+          ports:
+            - containerPort: 6379
+              name: redis
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          args:
+            - "--requirepass"
+            - "$(REDIS_PASSWORD)"
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: REDIS_PASSWORD
+          livenessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: redis
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-data-pvc
+      securityContext:
+        fsGroup: 999  # Redis user in Alpine
+        runAsUser: 999
+        runAsNonRoot: true
+
+---
+# Redis Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: default
+  labels:
+    app: dog-walker-platform
+    component: redis
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: redis
+      protocol: TCP
+      name: redis
+  selector:
+    app: dog-walker-platform
+    component: redis
+
+---
+# Human Tasks Required:
+# 1. Ensure storage class 'standard' exists in the cluster
+# 2. Verify PVC storage size (10Gi) meets production requirements
+# 3. Review and adjust resource limits based on actual usage patterns
+# 4. Configure backup strategy for Redis data
+# 5. Set up monitoring and alerts for Redis metrics
+# 6. Consider implementing Redis Sentinel for high availability in production
+# 7. Review security policies and network policies
+# 8. Ensure proper RBAC is configured for accessing secrets
