@@ -1,0 +1,27 @@
+*.xcuserstate
+*.xcworkspace
+*.xcuserdata
+*.xcdebugger
+*.xcsettings
+*.xcscheme
+
+# CocoaPods
+Pods/
+
+# Build generated
+build/
+DerivedData/
+
+# Vim swap files
+*.swp
+*.swo
+
+# OS generated files
+*.DS_Store
+
+# Temporary files
+*.tmp
+*.log
+
+# Lock files
+*.lock
