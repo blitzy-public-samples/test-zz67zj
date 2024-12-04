@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Requirements addressed:
+- Internationalization (8.1.1 Design Specifications): This resource file supports multiple languages 
+  by providing a centralized location for strings that can be localized.
+- UI Text Management (8.1.2 Interface Elements): Provides consistent text resources across the app
+-->
+<resources>
+    <!-- App name -->
+    <string name="app_name">Dog Walker</string>
+
+    <!-- Screen titles -->
+    <string name="login_title">Login</string>
+    <string name="register_title">Register</string>
+    <string name="home_title">Home</string>
+    <string name="booking_title">Booking</string>
+    <string name="payment_title">Payment</string>
+    <string name="profile_title">Profile</string>
+    <string name="walk_title">Active Walk</string>
+
+    <!-- Error messages -->
+    <string name="error_network">Network error. Please try again.</string>
+    <string name="error_unknown">An unknown error occurred.</string>
+</resources>
