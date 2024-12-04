@@ -1,0 +1,39 @@
+# Addresses requirement: Version Control Hygiene
+# Location: System Design/Development & Deployment/Version Control
+# Ensures sensitive and unnecessary files are excluded from version control
+
+# Android Studio / IntelliJ IDEA project files
+*.iml
+.idea/
+
+# Gradle files
+.gradle/
+/build/
+local.properties
+
+# Android build outputs and intermediates
+*.apk
+*.ap_
+output.json
+
+# Lint outputs
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+
+# Native build files
+.externalNativeBuild/
+
+# Debug and logging
+*.log
+/captures/
+
+# Keystore files (sensitive)
+*.keystore
+
+# System files
+.DS_Store
+
+# Gradle caches
+caches/
