@@ -1,0 +1,40 @@
+# Requirement: Version Control Hygiene
+# Technical Specification/7.4.3 Security Architecture
+# Ensure sensitive files and unnecessary artifacts are excluded from version control
+
+# Development directories
+node_modules/
+dist/
+build/
+logs/
+coverage/
+
+# Infrastructure and deployment
+.terraform/
+k8s/
+
+# IDE and editor directories
+.vscode/
+.idea/
+
+# Log files
+*.log
+
+# Environment and sensitive files
+*.env
+
+# Terraform state files
+*.tfstate
+
+# Docker related
+*.docker
+
+# Test files
+*.test.ts
+
+# System files
+.DS_Store
+
+# Package manager lock files
+yarn.lock
+package-lock.json
