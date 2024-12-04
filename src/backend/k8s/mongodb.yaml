@@ -1,0 +1,130 @@
+# MongoDB Kubernetes Configuration for Dog Walker Platform
+# Addresses requirement 7.2.2 Data Storage Components: Deploy and manage a MongoDB instance
+# to handle document-based data storage for backend services.
+
+---
+# PersistentVolumeClaim for MongoDB data persistence
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: default
+  labels:
+    app: dog-walker-platform
+    component: mongodb
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi  # Adjust storage size based on data requirements
+  storageClassName: standard  # Use appropriate storage class for your cluster
+
+---
+# MongoDB Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb
+  namespace: default
+  labels:
+    app: dog-walker-platform
+    component: mongodb
+spec:
+  replicas: 1  # Consider using StatefulSet for production with multiple replicas
+  selector:
+    matchLabels:
+      app: dog-walker-platform
+      component: mongodb
+  template:
+    metadata:
+      labels:
+        app: dog-walker-platform
+        component: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:6.0  # MongoDB version 6.0
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: "dogwalker_user"  # From globals.MONGODB_USER
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: DB_PASSWORD
+            - name: MONGO_INITDB_DATABASE
+              value: "dogwalker"  # From globals.MONGODB_DB
+          volumeMounts:
+            - name: mongodb-data
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          livenessProbe:
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: mongodb-data
+          persistentVolumeClaim:
+            claimName: mongodb-pvc
+      securityContext:
+        fsGroup: 999  # MongoDB group ID
+        runAsUser: 999  # MongoDB user ID
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: component
+                      operator: In
+                      values:
+                        - mongodb
+                topologyKey: kubernetes.io/hostname
+
+---
+# MongoDB Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: default
+  labels:
+    app: dog-walker-platform
+    component: mongodb
+spec:
+  type: ClusterIP
+  ports:
+    - port: 27017
+      targetPort: 27017
+      protocol: TCP
+      name: mongodb
+  selector:
+    app: dog-walker-platform
+    component: mongodb
+
+---
+# Human Tasks Required:
+# 1. Ensure appropriate storage class is available in the cluster
+# 2. Verify MongoDB resource limits are appropriate for your workload
+# 3. Consider implementing MongoDB replication for high availability
+# 4. Set up regular backup procedures for the MongoDB data
+# 5. Configure network policies to restrict access to MongoDB
+# 6. Implement monitoring and alerting for MongoDB metrics
+# 7. Review and adjust MongoDB configuration parameters if needed
+# 8. Ensure proper RBAC policies are in place
