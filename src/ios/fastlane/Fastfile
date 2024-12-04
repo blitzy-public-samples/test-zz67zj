@@ -1,0 +1,149 @@
+# Fastlane configuration file
+# Version: fastlane 2.217.0 or later
+
+# Requirement Addressed: iOS Deployment Automation
+# Technical Specification/9.5 Development & Deployment
+# This file defines automated workflows for building, testing and deploying the Dog Walker iOS application
+
+# Import dependencies from Appfile
+import_from_git(url: "src/ios/fastlane/Appfile")
+
+# Default platform
+default_platform(:ios)
+
+# Define fastlane platform configuration
+platform :ios do
+  # Before all actions
+  before_all do
+    # Verify environment
+    verify_xcode
+    
+    # Ensure we're on a clean git state
+    ensure_git_status_clean
+    
+    # Install dependencies
+    sh("../scripts/build.sh installDependencies")
+  end
+
+  # After all actions
+  after_all do |lane|
+    # Clean up build artifacts
+    clean_build_artifacts
+    
+    # Notify on success
+    notification(
+      title: "Fastlane",
+      message: "#{lane} completed successfully!"
+    )
+  end
+
+  # Error handling
+  error do |lane, exception|
+    # Log error details
+    UI.error("#{lane} failed with exception: #{exception}")
+    
+    # Send error notification
+    notification(
+      title: "Fastlane Error",
+      message: "#{lane} failed: #{exception}",
+      error: true
+    )
+  end
+
+  # Lane: build_and_test
+  # Builds the iOS project and runs all tests
+  desc "Build and test the iOS application"
+  lane :build_and_test do
+    # Sync code signing certificates and profiles
+    sync_code_signing(
+      type: "development",
+      readonly: true
+    )
+    
+    # Install dependencies
+    sh("../scripts/build.sh installDependencies")
+    
+    # Build project
+    sh("../scripts/build.sh buildProject")
+    
+    # Run tests
+    sh("../scripts/test.sh main")
+    
+    # Capture test results
+    scan(
+      scheme: "DogWalker",
+      clean: true,
+      code_coverage: true,
+      output_directory: "test_output",
+      output_types: "html,junit"
+    )
+  end
+
+  # Lane: deploy
+  # Deploys the iOS application to TestFlight or App Store
+  desc "Deploy iOS application to TestFlight or App Store"
+  lane :deploy do |options|
+    # Validate target parameter
+    target = options[:target]
+    unless ["testflight", "appstore"].include?(target)
+      UI.user_error!("Invalid target specified. Must be 'testflight' or 'appstore'")
+    end
+
+    # Sync code signing
+    sync_code_signing(
+      type: target == "testflight" ? "appstore" : "appstore",
+      readonly: true
+    )
+    
+    # Build project
+    sh("../scripts/build.sh buildProject")
+    
+    # Package application
+    sh("../scripts/build.sh packageApp")
+    
+    # Deploy based on target
+    case target
+    when "testflight"
+      upload_to_testflight(
+        skip_waiting_for_build_processing: true,
+        changelog: read_changelog,
+        distribute_external: true,
+        notify_external_testers: true
+      )
+    when "appstore"
+      upload_to_app_store(
+        force: true,
+        skip_metadata: false,
+        skip_screenshots: true,
+        submit_for_review: true,
+        automatic_release: true,
+        submission_information: {
+          add_id_info_uses_idfa: false,
+          export_compliance_uses_encryption: false
+        }
+      )
+    end
+    
+    # Tag release in git
+    version = get_version_number
+    build = get_build_number
+    add_git_tag(tag: "v#{version}-#{build}")
+    push_git_tags
+  end
+
+  # Private helper methods
+  private_lane :verify_xcode do
+    # Ensure correct Xcode version is selected
+    xcversion(version: "~> 14.0")
+  end
+
+  private_lane :read_changelog do
+    # Read changelog from file
+    begin
+      File.read("../CHANGELOG.md")
+    rescue
+      UI.message("No changelog found")
+      nil
+    end
+  end
+end
